@@ -18,7 +18,7 @@ const env = z.object({
   CLOUDINARY_API_SECRET: z.string().optional(),
   CLOUDINARY_UPLOAD_PRESET: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().trim().min(1).default('gemini-3.6-flash'),
+  GEMINI_MODEL: z.string().trim().min(1).default('gemini-2.5-flash'),
   OPENWA_API_URL: z.string().url().optional(),
   OPENWA_API_KEY: optionalSecret,
   OPENWA_WEBHOOK_SECRET: optionalSecret,

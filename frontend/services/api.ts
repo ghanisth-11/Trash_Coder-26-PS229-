@@ -98,18 +98,7 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
-const configuredApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
-const isVercelPreview =
-  typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app');
-// Vercel forwards /api requests through frontend/vercel.json. Keeping calls same-origin
-// there prevents an outdated public environment variable from reaching a missing route
-// and avoids browser CORS restrictions on camera uploads.
-const BASE_URL = isVercelPreview
-  ? ''
-  : (configuredApiBaseUrl ||
-    (process.env.NODE_ENV === 'production'
-      ? 'https://trash-coder-26-ps229.onrender.com'
-      : 'http://localhost:3000'));
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 function queryString(query: ShopQuery) {
   const params = new URLSearchParams();
   if (query.category) params.set('category', query.category);

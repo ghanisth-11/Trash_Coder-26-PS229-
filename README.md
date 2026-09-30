@@ -29,10 +29,6 @@ npm run dev -- -p 3001
 
 Keep the API running on port 3000 and open `http://localhost:3001`. The default local CORS allowlist already includes `http://localhost:3001`; restart the API if you change `CORS_ORIGINS`.
 
-### Vercel frontend deployment
-
-Deploy the `frontend/` directory as the Vercel project root. Its [`vercel.json`](frontend/vercel.json) proxies same-origin `/api/*` requests to the production API, so mobile photo uploads do not depend on a browser-visible API URL or cross-origin CORS configuration. Do not set `NEXT_PUBLIC_API_BASE_URL` in Vercel; redeploy after changing the proxy destination.
-
 ## Android app (Capacitor)
 
 The Next.js frontend can be packaged as an Android app with Capacitor. Install Android Studio with the Android SDK, then run the following from `frontend/`:
@@ -103,7 +99,7 @@ The OpenWA runtime definition uses the current v5 webhook envelope and pins both
 
 Set `CORS_ORIGINS` to comma-separated frontend origins. Set `TRUST_PROXY_HOPS` only to the known number of trusted reverse proxies. Production explicitly rejects Firebase emulator environment variables.
 
-Production startup also requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` and `GEMINI_API_KEY`, and rejects a wildcard CORS origin. `GEMINI_MODEL` defaults to `gemini-3.6-flash`; only use a model name that supports the configured generation API. Request logs contain request ID, method, route, status and duration only—never tokens, request bodies or secrets.
+Production startup also requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` and `GEMINI_API_KEY`, and rejects a wildcard CORS origin. `GEMINI_MODEL` defaults to `gemini-2.5-flash`; only use a model name that supports the configured generation API. Request logs contain request ID, method, route, status and duration only—never tokens, request bodies or secrets.
 
 ### OpenWA container and AWS
 
@@ -217,7 +213,7 @@ curl "$BASE/api/middleman/collector-shop?lat=28.6&lng=77.2&radiusKm=20" -H "Auth
 - Sellers approve below-asking offers before buyers lock them. Both original parties must confirm completion. Completion writes both immutable ledger entries and sold state in one transaction. Repeated confirmations are idempotent. There is no payment gateway or automatic money transfer.
 - Operator QC price is a total, cannot change through chat or offers, and only admin can reprice an unreserved listing. Existing reserved/completed trades cannot be repriced, even by admin.
 - Priority uses active, unexpired subscriptions belonging to verified recyclers; tier 3 wins, then oldest subscription, then stable ID. Assignment is transactional. The worker recovers any `priced` listing left between QC commit and assignment if a request/process failed.
-- Gemini makes exactly three sequential calls to `GEMINI_MODEL` (default `gemini-3.6-flash`): vision description, vision plus description classification, then text pricing. Structured output is validated. Listings preserve the original Cloudinary image URL plus validated stage output, confidence, model/prompt version, timestamps and sanitized fallback state in `aiPipeline`. E-waste, copper/PCB/high-value metal are forced to QC. Transient AI capacity failures are retried before a manual-review QC ticket is created. Cloudinary upload failures return an explicit error. Known listings without rates and unavailable AI persist as drafts, recoverable via `PATCH /api/listings/:id/manual`.
+- Gemini makes exactly three sequential calls to `GEMINI_MODEL` (default `gemini-2.5-flash`): vision description, vision plus description classification, then text pricing. Structured output is validated. Listings preserve the original Cloudinary image URL plus validated stage output, confidence, model/prompt version, timestamps and sanitized fallback state in `aiPipeline`. E-waste, copper/PCB/high-value metal are forced to QC. Any AI failure creates a manual-review QC ticket rather than losing the listing. Cloudinary upload failures return an explicit error. Known listings without rates and unavailable AI persist as drafts, recoverable via `PATCH /api/listings/:id/manual`.
 - Aggregator inventory is category-specific: a batch cannot be `mixed`, and every source holding must be a completed, owned lot in exactly the batch category. Mixed and e-waste source lots must first be inspected and split into segregated outputs.
 - Price reference writes never overwrite a manual operator/admin override with a Gemini estimate.
 - OpenWA inbound `message.received` events are authenticated with a shared header, deduplicated by session ID plus message ID, durably queued before a `204` response, and processed in database receipt order per phone number. Responses are queued in the same transaction as session changes. Webhook enqueue latency is capped at four seconds; timeout returns 503 so OpenWA can retry. Text-only addresses use locality matching; unmatched requests remain pending for admin assignment. No unconfigured geocoder or invented coordinates are used.
