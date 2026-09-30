@@ -704,6 +704,80 @@ function Success() {
     </section>
   );
 }
+
+const materialRateCategories = [
+  {
+    id: 'paper',
+    name: 'Paper & cardboard',
+    image: '/images/material-rates/paper-scrap.png',
+    alt: 'Sorted recyclable paper, cardboard, books and newspapers',
+    rates: [
+      ['Newspaper', 13],
+      ['Carton', 12],
+      ['Books', 12],
+      ['Grey Board', 3],
+      ['Copy', 12],
+      ['Magazines', 10],
+      ['Record Paper', 12],
+      ['White Paper', 12],
+      ['Used Beverage Carton', 5],
+    ],
+  },
+  {
+    id: 'metal',
+    name: 'Metal',
+    image: '/images/material-rates/metal-scrap.png',
+    alt: 'Sorted recyclable iron, steel, aluminium, brass and copper scrap',
+    rates: [
+      ['Iron', 25],
+      ['Tin', 20],
+      ['Aluminium', 150],
+      ['Steel', 45],
+      ['Brass', 450],
+      ['Copper', 600],
+      ['Casting Aluminium', 140],
+      ['Copper Wire', 60],
+      ['Aluminium Wire', 18],
+      ['Beverage Cans — Aluminium', 120],
+      ['Inverter Battery', 80],
+    ],
+  },
+] as const;
+
+function LocalPrices({ language }: { language: AppLanguage }) {
+  const t = (key: string) => translate(language, key);
+  return (
+    <>
+      {title(t('Local Prices'), 'Paper and metal rates supplied on 29 Sep 2026.')}
+      <section className="rate-callout">
+        <IndianRupee size={21} />
+        <p>
+          <b>All rates are per kg.</b> Use these as your current collection reference before posting a lot.
+        </p>
+      </section>
+      <div className="rate-category-grid">
+        {materialRateCategories.map((category) => (
+          <section className="rate-category-card" key={category.id}>
+            <div className="rate-category-image">
+              <img src={category.image} alt={category.alt} />
+              <span>{category.name}</span>
+            </div>
+            <div className="rate-list" aria-label={`${category.name} rates`}>
+              {category.rates.map(([material, rate]) => (
+                <div className="rate-row" key={material}>
+                  <span>{material}</span>
+                  <strong>₹{rate}</strong>
+                  <small>/ kg</small>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function SimpleKabadiPage({
   kind,
   language,
@@ -778,6 +852,7 @@ function SimpleKabadiPage({
         </section>
       </>
     );
+  if (kind === 'prices') return <LocalPrices language={language} />;
   const [heading, copy, action, fn] = content[kind];
   return (
     <>
