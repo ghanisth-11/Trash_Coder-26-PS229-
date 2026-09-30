@@ -1,8 +1,11 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "https://trash-coder-26-ps229.onrender.com/api/:path*"
+      "src": "/api/(.*)",
+      "dest": "https://trash-coder-26-ps229.onrender.com/api/$1"
+    },
+    {
+      "handle": "filesystem"
     }
   ]
 }
