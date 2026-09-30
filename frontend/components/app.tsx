@@ -835,7 +835,20 @@ function SimpleKabadiPage({
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanPhotoName, setScanPhotoName] = useState<string | null>(null);
-  const scanPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const [lastScanPhoto, setLastScanPhoto] = useState<File | null>(null);
+  const performScan = async (photo: File) => {
+    setScanning(true);
+    setScanError(null);
+    setScanResult(null);
+    try {
+      setScanResult(await api.scanMaterial(photo));
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : 'Unable to scan this photo. Please try again.');
+    } finally {
+      setScanning(false);
+    }
+  };
+  const scanPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
     const photo = event.target.files?.[0];
     // Reset this so taking/selecting the same photo again still triggers a scan.
     event.target.value = '';
@@ -848,17 +861,9 @@ function SimpleKabadiPage({
       setScanError('Use a photo smaller than 8 MB.');
       return;
     }
-    setScanning(true);
-    setScanError(null);
-    setScanResult(null);
     setScanPhotoName(photo.name || 'Camera photo');
-    try {
-      setScanResult(await api.scanMaterial(photo));
-    } catch (error) {
-      setScanError(error instanceof Error ? error.message : 'Unable to scan this photo. Please try again.');
-    } finally {
-      setScanning(false);
-    }
+    setLastScanPhoto(photo);
+    void performScan(photo);
   };
   const content = {
     lots: [
@@ -906,7 +911,16 @@ function SimpleKabadiPage({
             </button>
           </div>
           {scanPhotoName && !scanning && <p>Photo: {scanPhotoName}</p>}
-          {scanError && <p className="scanner-error" role="alert">{scanError}</p>}
+          {scanError && (
+            <div className="scanner-error" role="alert">
+              <p>{scanError}</p>
+              {lastScanPhoto && (
+                <button type="button" className="scanner-upload" onClick={() => void performScan(lastScanPhoto)} disabled={scanning}>
+                  Try this photo again
+                </button>
+              )}
+            </div>
+          )}
           {scanResult ? (
             <article className="scan-result" aria-live="polite">
               <div>

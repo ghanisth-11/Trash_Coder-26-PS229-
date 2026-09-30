@@ -53,8 +53,8 @@ test('Gemini performs three ordered calls, passes images only to vision chains a
     assert.match(String(calls[1]!.contents[0]!.parts[0]!.text), /A copper PCB/);
     assert.equal(result.detection.needsOperatorQC, true);
     assert.equal(result.detection.category, 'copper-scrap');
-    assert.equal(result.provenance.model, 'gemini-2.5-flash');
-    assert.equal(result.provenance.promptVersion, 'scrap-v1');
+    assert.equal(result.provenance.model, 'gemini-3.6-flash');
+    assert.equal(result.provenance.promptVersion, 'scrap-v2');
     assert.deepEqual(result.provenance.classification, result.detection);
     assert.match(result.price.priceNote, /verify locally/i);
     assert.deepEqual(
@@ -86,6 +86,39 @@ test('Gemini rejects malformed structured output', async () => {
     new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'not JSON' }] } }] }));
   try {
     await assert.rejects(realIntegrations().estimate('paper'));
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = originalKey;
+  }
+});
+
+test('Gemini retries a temporary capacity failure before estimating a price', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = 'test-key';
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    if (calls === 1) return new Response('busy', { status: 503 });
+    return new Response(
+      JSON.stringify({
+        candidates: [{ content: { parts: [{ text: JSON.stringify({
+          buyPrice: 11,
+          sellPrice: 17,
+          priceUnit: 'per_kg',
+          currency: 'INR',
+          priceNote: 'Estimate.',
+          marketTrend: 'stable',
+        }) }] } }],
+      }),
+      { status: 200 },
+    );
+  };
+  try {
+    const estimate = await realIntegrations().estimate('paper');
+    assert.equal(calls, 2);
+    assert.equal(estimate.sellPrice, 17);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalKey === undefined) delete process.env.GEMINI_API_KEY;

@@ -49,7 +49,7 @@ export class Marketplace {
       aiFailed: false,
       aiPipeline: {
         status: 'not_run',
-        model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+        model: process.env.GEMINI_MODEL ?? 'gemini-3.6-flash',
         promptVersion: 'scrap-v1',
         attemptedAt: null,
         completedAt: null,
