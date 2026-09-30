@@ -98,7 +98,13 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+const configuredApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
+// The hosted frontend uses Vercel's same-origin proxy below. This keeps Firebase
+// login and profile verification on one public origin without browser CORS issues.
+const BASE_URL =
+  typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')
+    ? ''
+    : (configuredApiBaseUrl || 'http://localhost:3000');
 function queryString(query: ShopQuery) {
   const params = new URLSearchParams();
   if (query.category) params.set('category', query.category);
