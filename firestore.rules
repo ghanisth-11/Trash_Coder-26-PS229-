@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function user() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function enabled() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && user().verificationStatus != 'rejected'; }
+    function role(value) { return enabled() && user().role == value; }
+    function staff() { return role('admin') || role('operator'); }
+    function owns(field) { return enabled() && resource.data[field] == request.auth.uid; }
+    function party(dealId) { let d = get(/databases/$(database)/documents/deals/$(dealId)).data; return enabled() && (d.sellerId == request.auth.uid || d.buyerId == request.auth.uid); }
+    // All writes pass through the authenticated API. Admin SDK bypasses these rules;
+    // server middleware and transactions enforce write permissions and invariants.
+    match /users/{uid} { allow read: if enabled() && (request.auth.uid == uid || role('admin')); allow write: if false; }
+    match /listings/{id} { allow read: if staff() || owns('kabadiwalaId') || owns('middlemanId') || (resource.data.dealId != null && party(resource.data.dealId)); allow write: if false; }
+    match /tickets/{id} { allow read: if staff() || owns('kabadiwalaId'); allow write: if false; }
+    match /middlemanInventory/{id} { allow read: if role('admin') || owns('middlemanId') || (role('recycler') && user().verificationStatus == 'verified' && resource.data.status == 'listed_to_recycler') || (resource.data.dealId != null && party(resource.data.dealId)); allow write: if false; }
+    match /prioritySubscriptions/{id} { allow read: if role('admin') || owns('recyclerId'); allow write: if false; }
+    match /deals/{id} { allow read: if staff() || owns('sellerId') || owns('buyerId'); allow write: if false; }
+    match /chatThreads/{id} { allow read: if staff() || (enabled() && request.auth.uid in resource.data.participantIds); allow write: if false; }
+    match /chatMessages/{id} { allow read: if staff() || party(resource.data.dealId); allow write: if false; }
+    match /ledgerEntries/{id} { allow read: if role('admin') || owns('userId'); allow create, update, delete: if false; }
+    match /notifications/{id} { allow read: if owns('userId') || role('admin'); allow write: if false; }
+    match /whatsappRequests/{id} { allow read: if role('admin') || owns('assignedKabadiwalaId'); allow write: if false; }
+    match /priceReference/{id} { allow read: if enabled(); allow write: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "kabadiwala-connect-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "worker": "tsx src/worker.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "prebootstrap-admin": "npm run build",
+    "bootstrap-admin": "node dist/bootstrap-admin.js",
+    "preseed-demo": "npm run build",
+    "seed-demo": "node dist/seed-demo.js",
+    "test:emulator": "firebase emulators:exec --only firestore --project demo-kabadiwala \"tsx --test test/emulator.integration.ts\"",
+    "format": "prettier --write src test scripts README.md package.json tsconfig.json firebase.json firestore.indexes.json",
+    "format:check": "prettier --check src test scripts README.md package.json tsconfig.json firebase.json firestore.indexes.json"
+  },
+  "overrides": {
+    "gaxios@^6.0.0": {
+      "uuid": "^11.1.1"
+    }
+  },
+  "dependencies": {
+    "cloudinary": "^2.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "firebase-admin": "^14.5.0",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.2",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.15.0",
+    "@types/supertest": "^6.0.3",
+    "firebase-tools": "^15.31.0",
+    "prettier": "^3.9.9",
+    "supertest": "^7.1.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

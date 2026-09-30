@@ -1,0 +1,8 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "chatMessages", "fieldPath": "text", "indexes": [] },
+    { "collectionGroup": "jobs", "fieldPath": "payload", "indexes": [] },
+    { "collectionGroup": "listings", "fieldPath": "aiDescription", "indexes": [] }
+  ]
+}
