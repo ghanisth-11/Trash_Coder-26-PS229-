@@ -717,6 +717,69 @@ button:disabled {
   font-size: 14px;
   text-align: center;
 }
+.scanner-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+.scanner-upload {
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.scanner-upload:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.scanner-error {
+  color: var(--danger) !important;
+}
+.scan-result {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #b8d7c0;
+  border-radius: var(--radius);
+  background: #f6fcf7;
+}
+.scan-result h2,
+.scan-result p {
+  margin: 4px 0 0;
+}
+.scan-result-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.scan-result-details span {
+  display: grid;
+  gap: 3px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+.scan-result-details b {
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.scanner-note,
+.scanner-disclaimer {
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff5dc;
+  color: #795b19 !important;
+}
+.scanner-disclaimer {
+  background: #edf4ee;
+  color: var(--muted) !important;
+}
 .profile-list {
   display: grid;
   max-width: 640px;

@@ -51,6 +51,27 @@ export interface ShopQuery {
   minPrice?: string;
   maxPrice?: string;
 }
+export interface MaterialScanResult {
+  description: string;
+  detection: {
+    name: string;
+    category: string;
+    subType: string;
+    condition: string;
+    isEwaste: boolean;
+    needsOperatorQC: boolean;
+    keyComponents: string[];
+    confidence: 'high' | 'medium' | 'low';
+  };
+  price: {
+    buyPrice: number;
+    sellPrice: number;
+    priceUnit: 'per_kg' | 'per_piece' | 'per_lot';
+    currency: 'INR';
+    priceNote: string;
+    marketTrend: 'stable' | 'rising' | 'falling';
+  };
+}
 export interface AdminStats {
   totalListings: number;
   completedDeals: number;
@@ -132,6 +153,11 @@ export const api = {
     request<CollectorLot>('/api/listings/known', { method: 'POST', body }),
   createEwasteListing: (body: FormData) =>
     request<CollectorLot>('/api/listings/ewaste', { method: 'POST', body }),
+  scanMaterial: (photo: File) => {
+    const body = new FormData();
+    body.set('photo', photo);
+    return request<MaterialScanResult>('/api/detection/material', { method: 'POST', body });
+  },
   getPickupRequests: () => request<{ items: PickupRequest[] }>('/api/pickups'),
   getLocalPrice: (category: string) => request<PriceReference>(`/api/price/${encodeURIComponent(category)}`),
   getLedger: () => request<{ items: LedgerTransaction[] }>('/api/ledger'),

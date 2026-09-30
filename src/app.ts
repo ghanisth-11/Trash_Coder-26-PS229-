@@ -353,6 +353,18 @@ export function createApp(deps: AppDependencies) {
     ensure(photo, 400, 'PHOTO_REQUIRED', 'Photo is required');
     res.status(201).json(await market.createEwaste(req.actor, v.ewaste.parse(form(req)), photo));
   });
+  app.post('/api/detection/material', requireRole('kabadiwala'), aiLimit, upload, async (req, res) => {
+    const photo = image(req);
+    ensure(photo, 400, 'PHOTO_REQUIRED', 'Photo is required');
+    const result = await deps.integrations.detect(photo);
+    // A scan is intentionally read-only. It should help a collector decide what to list,
+    // without creating a draft or uploading the image to their inventory.
+    res.json({
+      description: result.description,
+      detection: result.detection,
+      price: result.price,
+    });
+  });
   app.get('/api/listings/mine', async (req, res) =>
     res.json(
       paginate(await store.query('listings', [['kabadiwalaId', '==', req.actor.uid]]), req.query),

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -41,7 +41,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { TranslationProvider, useTranslation } from '@/lib/translation-context';
 import { api } from '@/services/api';
 import { getFirebaseAuth } from '@/lib/firebase';
-import type { BackendProfile, ShopItem } from '@/services/api';
+import type { BackendProfile, MaterialScanResult, ShopItem } from '@/services/api';
 import type { MaterialCategory, UserRole } from '@/types/domain';
 
 const Icon = ({ children }: { children: React.ReactNode }) => (
@@ -790,6 +790,36 @@ function SimpleKabadiPage({
 }) {
   const router = useRouter();
   const t = (key: string) => translate(language, key);
+  const scanInput = useRef<HTMLInputElement>(null);
+  const [scanResult, setScanResult] = useState<MaterialScanResult | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanPhotoName, setScanPhotoName] = useState<string | null>(null);
+  const scanPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const photo = event.target.files?.[0];
+    // Reset this so taking/selecting the same photo again still triggers a scan.
+    event.target.value = '';
+    if (!photo) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type)) {
+      setScanError('Use a JPEG, PNG, or WebP photo.');
+      return;
+    }
+    if (photo.size > 8 * 1024 * 1024) {
+      setScanError('Use a photo smaller than 8 MB.');
+      return;
+    }
+    setScanning(true);
+    setScanError(null);
+    setScanResult(null);
+    setScanPhotoName(photo.name || 'Camera photo');
+    try {
+      setScanResult(await api.scanMaterial(photo));
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : 'Unable to scan this photo. Please try again.');
+    } finally {
+      setScanning(false);
+    }
+  };
   const content = {
     lots: [
       t('My Lots'),
@@ -818,11 +848,46 @@ function SimpleKabadiPage({
         <section className="scanner">
           <div className="scanner-frame">
             <Camera size={44} />
-            <strong>{t('Take a photo')}</strong>
+            <strong>{scanning ? 'Scanning your material…' : t('Take a photo')}</strong>
             <span>{t('Keep the material in good light.')}</span>
-            <Button>{t('Open Camera')}</Button>
+            <input
+              ref={scanInput}
+              className="scanner-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              onChange={scanPhoto}
+            />
+            <Button onClick={() => scanInput.current?.click()} disabled={scanning}>
+              {scanning ? 'Scanning…' : t('Open Camera')}
+            </Button>
+            <button className="scanner-upload" type="button" onClick={() => scanInput.current?.click()} disabled={scanning}>
+              Or choose a photo from your device
+            </button>
           </div>
-          <p>{t('No result will appear until the scan is complete.')}</p>
+          {scanPhotoName && !scanning && <p>Photo: {scanPhotoName}</p>}
+          {scanError && <p className="scanner-error" role="alert">{scanError}</p>}
+          {scanResult ? (
+            <article className="scan-result" aria-live="polite">
+              <div>
+                <span className="eyebrow">Detection result</span>
+                <h2>{scanResult.detection.name}</h2>
+                <p>{scanResult.description}</p>
+              </div>
+              <div className="scan-result-details">
+                <span><b>Category</b>{scanResult.detection.category.replaceAll('-', ' ')}</span>
+                <span><b>Condition</b>{scanResult.detection.condition}</span>
+                <span><b>Confidence</b>{scanResult.detection.confidence}</span>
+                <span><b>Estimated sell price</b>₹{scanResult.price.sellPrice} / {scanResult.price.priceUnit.replace('per_', '')}</span>
+              </div>
+              {scanResult.detection.needsOperatorQC && (
+                <p className="scanner-note">This material needs an operator check before it can be priced or sold.</p>
+              )}
+              <p className="scanner-disclaimer">{scanResult.price.priceNote}</p>
+            </article>
+          ) : !scanning && !scanError ? (
+            <p>{t('No result will appear until the scan is complete.')}</p>
+          ) : null}
         </section>
       </>
     );

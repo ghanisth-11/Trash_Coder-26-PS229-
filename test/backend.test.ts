@@ -104,6 +104,29 @@ test('auth and role enforcement; buyer shop excludes private fields', async () =
   assert.equal(shop.body.items[0].geo, undefined);
   assert.equal(shop.body.items[0].kabadiwalaId, undefined);
 });
+test('material scan detects an image without creating a listing', async () => {
+  const { app, store } = await setup();
+  const ai: Integrations = {
+    ...integrations,
+    detect: async () => ({
+      description: 'A copper cable.',
+      detection: {
+        name: 'Copper cable', category: 'copper-scrap', subType: 'wire', condition: 'intact',
+        isEwaste: false, needsOperatorQC: true, keyComponents: ['copper'], confidence: 'high',
+      },
+      price: await integrations.estimate('copper-scrap'),
+      provenance: { model: 'test', promptVersion: 'test', identification: 'A copper cable.', classification: null, pricing: null },
+    }),
+  };
+  const scanApp = createApp({ store, integrations: ai, verifyToken: async (token) => ({ uid: token }) });
+  await request(scanApp)
+    .post('/api/detection/material')
+    .auth('seller', { type: 'bearer' })
+    .attach('photo', Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), { filename: 'cable.png', contentType: 'image/png' })
+    .expect(200)
+    .expect(({ body }) => assert.equal(body.detection.category, 'copper-scrap'));
+  assert.equal((await store.query('listings')).length, 0);
+});
 test('concurrent offers reserve once and remove listing from shop', async () => {
   const { market, store, actor } = await setup();
   const listing = (await market.createKnown(actor('seller'), listingInput))!;
