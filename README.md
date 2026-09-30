@@ -29,6 +29,20 @@ npm run dev -- -p 3001
 
 Keep the API running on port 3000 and open `http://localhost:3001`. The default local CORS allowlist already includes `http://localhost:3001`; restart the API if you change `CORS_ORIGINS`.
 
+## Android app (Capacitor)
+
+The Next.js frontend can be packaged as an Android app with Capacitor. Install Android Studio with the Android SDK, then run the following from `frontend/`:
+
+```powershell
+# Builds the static mobile bundle, copies it to the Android project, and syncs Capacitor.
+npm run cap:sync
+
+# Opens the generated Android project. Use Android Studio to run it on a device or build an APK.
+npm run cap:android
+```
+
+The mobile bundle defaults to the deployed API URL. To use another API deployment, set `MOBILE_API_BASE_URL` before `npm run cap:sync`. For a Capacitor Android app, add `https://localhost` to the backend's `CORS_ORIGINS` environment variable.
+
 The sign-in page supports email/password. Creating an account creates the Firebase identity first, then creates its backend profile through `POST /api/auth/profile`. Middleman and recycler accounts remain pending until an administrator verifies them. The UI submits known collector lots as optional-photo multipart requests and e-waste lots as required-photo multipart requests. It does not create direct bulk lots: category lots must be built from processed inventory through the backend workflow.
 
 Run the durable background worker in a second terminal:

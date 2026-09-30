@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
+import { App } from '@/components/app';
 
-// Temporary onboarding: choose a role first. Phone authentication is intentionally disabled.
 export default function Home() {
-  redirect('/auth/select-role');
+  return <App />;
 }

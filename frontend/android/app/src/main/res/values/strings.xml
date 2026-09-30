@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kabadiwala Connect</string>
+    <string name="title_activity_main">Kabadiwala Connect</string>
+    <string name="package_name">com.kabadiwalaconnect.app</string>
+    <string name="custom_url_scheme">com.kabadiwalaconnect.app</string>
+</resources>
