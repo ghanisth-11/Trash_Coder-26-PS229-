@@ -565,7 +565,21 @@ export function createApp(deps: AppDependencies) {
         (q.maxPrice === undefined || b.askingPrice <= q.maxPrice) &&
         q.radiusKm === undefined,
     );
-    res.json({ items: [], nextCursor: null, inventory: paginate(batches, q) });
+    const items = batches.map((batch) => ({
+      id: batch.id,
+      name: `${batch.aggregatedCategory.replace(/-/g, ' ')} bulk lot`,
+      category: batch.aggregatedCategory,
+      condition: 'processed',
+      weight: batch.totalWeight,
+      quantity: batch.sourcedFrom.length,
+      photoUrl: [],
+      price: batch.askingPrice,
+      priceUnit: 'per_lot',
+      priceNote: 'Processed and segregated by an aggregator.',
+      priceIsTotal: true,
+      status: batch.status,
+    }));
+    res.json(paginate(items, q));
   });
   app.post('/api/recycler/priority', requireRole('recycler'), verified, async (req, res) => {
     const b = v.priority.parse(req.body);

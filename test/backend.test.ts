@@ -433,6 +433,24 @@ test('full middleman batch resale completes through the HTTP API', async () => {
     .auth('middle', { type: 'bearer' })
     .send({ inventoryId: batch.body.id })
     .expect(200);
+  const shop = await request(app)
+    .get('/api/recycler/middleman-shop')
+    .auth('buyer', { type: 'bearer' })
+    .expect(200);
+  assert.deepEqual(shop.body.items[0], {
+    id: batch.body.id,
+    name: 'paper bulk lot',
+    category: 'paper',
+    condition: 'processed',
+    weight: 10,
+    quantity: 1,
+    photoUrl: [],
+    price: 200,
+    priceUnit: 'per_lot',
+    priceNote: 'Processed and segregated by an aggregator.',
+    priceIsTotal: true,
+    status: 'listed_to_recycler',
+  });
   const offered = await request(app)
     .post(`/api/recycler/offer/inventory/${batch.body.id}`)
     .auth('buyer', { type: 'bearer' })
