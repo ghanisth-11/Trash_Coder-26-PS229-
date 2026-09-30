@@ -705,7 +705,21 @@ function Success() {
   );
 }
 
-const materialRateCategories = [
+type MaterialRate = {
+  name: string;
+  rate: number;
+  image: string;
+  unit?: 'kg' | 'piece';
+};
+type MaterialRateCategory = {
+  id: string;
+  name: string;
+  image: string;
+  alt: string;
+  rates: MaterialRate[];
+};
+
+const materialRateCategories: MaterialRateCategory[] = [
   {
     id: 'paper',
     name: 'Paper & cardboard',
@@ -742,7 +756,33 @@ const materialRateCategories = [
       { name: 'Inverter Battery', rate: 80, image: 'inverter-battery' },
     ],
   },
-] as const;
+  {
+    id: 'e-waste',
+    name: 'E-waste & appliances',
+    image: '/images/material-rates/ewaste-scrap.jpg',
+    alt: 'Sorted electronic waste including a monitor, keyboard and cables',
+    rates: [
+      { name: 'Microwave', rate: 150, image: 'microwave', unit: 'piece' },
+      { name: 'E-waste', rate: 15, image: 'e-waste' },
+      { name: 'Cooler (Tin)', rate: 15, image: 'cooler-tin' },
+      { name: 'Cooler (Plastic/Fibre)', rate: 10, image: 'cooler-plastic-fibre' },
+      { name: 'AC (2 Ton)', rate: 3000, image: 'ac-2-ton', unit: 'piece' },
+      { name: 'AC (1.5 Ton)', rate: 2500, image: 'ac-1-5-ton', unit: 'piece' },
+      { name: 'AC (1 Ton)', rate: 2000, image: 'ac-1-ton', unit: 'piece' },
+      { name: 'Geyser', rate: 150, image: 'geyser', unit: 'piece' },
+      { name: 'Laptop', rate: 200, image: 'laptop', unit: 'piece' },
+      { name: 'Television (CRT)', rate: 100, image: 'television-crt', unit: 'piece' },
+      { name: 'Monitor (CRT)', rate: 200, image: 'monitor-crt', unit: 'piece' },
+      { name: 'Refrigerator (Double Door)', rate: 400, image: 'refrigerator-double-door', unit: 'piece' },
+      { name: 'Refrigerator (Single Door)', rate: 300, image: 'refrigerator-single-door', unit: 'piece' },
+      { name: 'Washing Machine', rate: 400, image: 'washing-machine', unit: 'piece' },
+      { name: 'UPS (with battery)', rate: 200, image: 'ups-with-battery', unit: 'piece' },
+      { name: 'Inverter Battery', rate: 80, image: 'inverter-battery-ewaste' },
+      { name: 'Printer', rate: 20, image: 'printer' },
+      { name: 'CPU', rate: 250, image: 'cpu', unit: 'piece' },
+    ],
+  },
+];
 
 function LocalPrices({ language }: { language: AppLanguage }) {
   const t = (key: string) => translate(language, key);
@@ -752,7 +792,7 @@ function LocalPrices({ language }: { language: AppLanguage }) {
       <section className="rate-callout">
         <IndianRupee size={21} />
         <p>
-          <b>All rates are per kg.</b> Use these as your current collection reference before posting a lot.
+          <b>Rates are shown per kg or per piece.</b> Use these as your current collection reference before posting a lot.
         </p>
       </section>
       <div className="rate-category-grid">
@@ -768,7 +808,7 @@ function LocalPrices({ language }: { language: AppLanguage }) {
                   <img src={`/images/material-rates/items/${material.image}.jpg`} alt="" aria-hidden="true" />
                   <span>{material.name}</span>
                   <strong>₹{material.rate}</strong>
-                  <small>/ kg</small>
+                  <small>/ {material.unit ?? 'kg'}</small>
                 </div>
               ))}
             </div>
