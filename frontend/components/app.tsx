@@ -765,6 +765,7 @@ function LocalPrices({ language }: { language: AppLanguage }) {
             <div className="rate-list" aria-label={`${category.name} rates`}>
               {category.rates.map(([material, rate]) => (
                 <div className="rate-row" key={material}>
+                  <img src={category.image} alt="" aria-hidden="true" />
                   <span>{material}</span>
                   <strong>₹{rate}</strong>
                   <small>/ kg</small>

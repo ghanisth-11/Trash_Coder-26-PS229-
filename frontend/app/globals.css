@@ -513,14 +513,20 @@ button:disabled {
 }
 .rate-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
   align-items: baseline;
   gap: 8px;
-  min-height: 44px;
+  min-height: 50px;
   border-bottom: 1px solid var(--line);
 }
 .rate-row:last-child {
   border-bottom: 0;
+}
+.rate-row img {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  object-fit: cover;
 }
 .rate-row > span {
   overflow-wrap: anywhere;
