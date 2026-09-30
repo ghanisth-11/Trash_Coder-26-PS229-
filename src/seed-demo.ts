@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import 'dotenv/config';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { firebase } from './firebase.js';
@@ -7,19 +7,43 @@ import type { Role, User } from './domain.js';
 type DemoAccount = {
   key: 'admin' | 'collector' | 'aggregator' | 'recycler';
   email: string;
+  password: string;
   name: string;
   role: Role;
 };
 type LocalCredentials = Record<string, { email: string; password: string; uid: string }>;
 
 const accounts: DemoAccount[] = [
-  { key: 'admin', email: 'demo.admin@kabadiwala.local', name: 'Demo Administrator', role: 'admin' },
-  { key: 'collector', email: 'demo.collector@kabadiwala.local', name: 'Demo Collector', role: 'kabadiwala' },
-  { key: 'aggregator', email: 'demo.aggregator@kabadiwala.local', name: 'Demo Aggregator', role: 'middleman' },
-  { key: 'recycler', email: 'demo.recycler@kabadiwala.local', name: 'Demo Recycler', role: 'recycler' },
+  {
+    key: 'admin',
+    email: 'admin@demo.local',
+    password: 'admin123',
+    name: 'Demo Administrator',
+    role: 'admin',
+  },
+  {
+    key: 'collector',
+    email: 'kabadiwala@demo.local',
+    password: 'kabadiwala123',
+    name: 'Demo Collector',
+    role: 'kabadiwala',
+  },
+  {
+    key: 'aggregator',
+    email: 'middleman@demo.local',
+    password: 'middleman123',
+    name: 'Demo Aggregator',
+    role: 'middleman',
+  },
+  {
+    key: 'recycler',
+    email: 'recycler@demo.local',
+    password: 'recycler123',
+    name: 'Demo Recycler',
+    role: 'recycler',
+  },
 ];
 const credentialsPath = resolve(process.cwd(), '.demo-accounts.json');
-const newPassword = () => `Kc-${randomBytes(14).toString('base64url')}-9!`;
 
 async function readCredentials(): Promise<LocalCredentials> {
   try {
@@ -34,24 +58,59 @@ const existingCredentials = await readCredentials();
 const { store, auth } = firebase();
 
 for (const account of accounts) {
-  const password = existingCredentials[account.key]?.password ?? newPassword();
   let identity;
   try {
     identity = await auth.getUserByEmail(account.email);
-    // Recover cleanly if a prior seed was interrupted before the local credentials file was written.
-    if (!existingCredentials[account.key]) identity = await auth.updateUser(identity.uid, { password });
   } catch (error: unknown) {
-    if (typeof error === 'object' && error && 'code' in error && error.code === 'auth/user-not-found') {
-      identity = await auth.createUser({
-        email: account.email,
-        password,
-        displayName: account.name,
-        emailVerified: true,
-      });
+    if (
+      typeof error === 'object' &&
+      error &&
+      'code' in error &&
+      error.code === 'auth/user-not-found'
+    ) {
+      const previousUid = existingCredentials[account.key]?.uid;
+      try {
+        identity = previousUid
+          ? await auth.updateUser(previousUid, {
+              email: account.email,
+              password: account.password,
+              displayName: account.name,
+              emailVerified: true,
+            })
+          : await auth.createUser({
+              email: account.email,
+              password: account.password,
+              displayName: account.name,
+              emailVerified: true,
+            });
+      } catch (migrationError: unknown) {
+        if (
+          typeof migrationError === 'object' &&
+          migrationError &&
+          'code' in migrationError &&
+          migrationError.code === 'auth/user-not-found'
+        ) {
+          identity = await auth.createUser({
+            email: account.email,
+            password: account.password,
+            displayName: account.name,
+            emailVerified: true,
+          });
+        } else {
+          throw migrationError;
+        }
+      }
     } else {
       throw error;
     }
   }
+
+  identity = await auth.updateUser(identity.uid, {
+    email: account.email,
+    password: account.password,
+    displayName: account.name,
+    emailVerified: true,
+  });
 
   const now = new Date().toISOString();
   await store.run(async (tx) => {
@@ -72,7 +131,11 @@ for (const account of accounts) {
     };
     tx.set('users', identity.uid, profile);
   });
-  existingCredentials[account.key] = { email: account.email, password, uid: identity.uid };
+  existingCredentials[account.key] = {
+    email: account.email,
+    password: account.password,
+    uid: identity.uid,
+  };
 }
 
 await writeFile(credentialsPath, `${JSON.stringify(existingCredentials, null, 2)}\n`, {

@@ -1,5 +1,11 @@
 import 'dotenv/config';
 import { z } from 'zod';
+
+const optionalSecret = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().min(16).optional(),
+);
+
 const env = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
@@ -14,8 +20,8 @@ const env = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().trim().min(1).default('gemini-2.5-flash'),
   OPENWA_API_URL: z.string().url().optional(),
-  OPENWA_API_KEY: z.string().min(16).optional(),
-  OPENWA_WEBHOOK_SECRET: z.string().min(16).optional(),
+  OPENWA_API_KEY: optionalSecret,
+  OPENWA_WEBHOOK_SECRET: optionalSecret,
   WORKER_POLL_MS: z.coerce.number().int().min(500).default(2000),
 });
 export function loadConfig() {

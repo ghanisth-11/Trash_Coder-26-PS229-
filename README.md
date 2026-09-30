@@ -78,7 +78,16 @@ For a video/demo environment, create one Firebase account for each role plus an 
 npm run seed-demo
 ```
 
-The script is idempotent. It creates verified Firestore profiles for the Collector, Aggregator, Recycler and Admin roles, and stores their generated email/password pairs only in the ignored local `.demo-accounts.json` file. It never creates sample listings, prices, deals or ledger records. Sign in as the demo administrator in the separate frontend to open `/admin`, where the protected API supplies platform statistics and account-verification controls.
+The script is idempotent. It creates verified Firestore profiles for the Collector, Aggregator, Recycler and Admin roles, retaining their profile IDs when it updates a prior local demo seed. It never creates sample listings, prices, deals or ledger records.
+
+| Role                   | Email                   | Password        |
+| ---------------------- | ----------------------- | --------------- |
+| Collector (Kabadiwala) | `kabadiwala@demo.local` | `kabadiwala123` |
+| Middleman (Aggregator) | `middleman@demo.local`  | `middleman123`  |
+| Recycler               | `recycler@demo.local`   | `recycler123`   |
+| Administrator          | `admin@demo.local`      | `admin123`      |
+
+These credentials are for demos only; do not reuse them outside a demo environment. Sign in as the demo administrator in the separate frontend to open `/admin`, where the protected API supplies platform statistics and account-verification controls.
 
 ## Environment
 
