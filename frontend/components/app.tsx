@@ -712,15 +712,15 @@ const materialRateCategories = [
     image: '/images/material-rates/paper-scrap.png',
     alt: 'Sorted recyclable paper, cardboard, books and newspapers',
     rates: [
-      ['Newspaper', 13],
-      ['Carton', 12],
-      ['Books', 12],
-      ['Grey Board', 3],
-      ['Copy', 12],
-      ['Magazines', 10],
-      ['Record Paper', 12],
-      ['White Paper', 12],
-      ['Used Beverage Carton', 5],
+      { name: 'Newspaper', rate: 13, image: 'newspaper' },
+      { name: 'Carton', rate: 12, image: 'carton' },
+      { name: 'Books', rate: 12, image: 'books' },
+      { name: 'Grey Board', rate: 3, image: 'grey-board' },
+      { name: 'Copy', rate: 12, image: 'copy' },
+      { name: 'Magazines', rate: 10, image: 'magazines' },
+      { name: 'Record Paper', rate: 12, image: 'record-paper' },
+      { name: 'White Paper', rate: 12, image: 'white-paper' },
+      { name: 'Used Beverage Carton', rate: 5, image: 'used-beverage-carton' },
     ],
   },
   {
@@ -729,17 +729,17 @@ const materialRateCategories = [
     image: '/images/material-rates/metal-scrap.png',
     alt: 'Sorted recyclable iron, steel, aluminium, brass and copper scrap',
     rates: [
-      ['Iron', 25],
-      ['Tin', 20],
-      ['Aluminium', 150],
-      ['Steel', 45],
-      ['Brass', 450],
-      ['Copper', 600],
-      ['Casting Aluminium', 140],
-      ['Copper Wire', 60],
-      ['Aluminium Wire', 18],
-      ['Beverage Cans — Aluminium', 120],
-      ['Inverter Battery', 80],
+      { name: 'Iron', rate: 25, image: 'iron' },
+      { name: 'Tin', rate: 20, image: 'tin' },
+      { name: 'Aluminium', rate: 150, image: 'aluminium' },
+      { name: 'Steel', rate: 45, image: 'steel' },
+      { name: 'Brass', rate: 450, image: 'brass' },
+      { name: 'Copper', rate: 600, image: 'copper' },
+      { name: 'Casting Aluminium', rate: 140, image: 'casting-aluminium' },
+      { name: 'Copper Wire', rate: 60, image: 'copper-wire' },
+      { name: 'Aluminium Wire', rate: 18, image: 'aluminium-wire' },
+      { name: 'Beverage Cans — Aluminium', rate: 120, image: 'beverage-cans-aluminium' },
+      { name: 'Inverter Battery', rate: 80, image: 'inverter-battery' },
     ],
   },
 ] as const;
@@ -763,11 +763,11 @@ function LocalPrices({ language }: { language: AppLanguage }) {
               <span>{category.name}</span>
             </div>
             <div className="rate-list" aria-label={`${category.name} rates`}>
-              {category.rates.map(([material, rate]) => (
-                <div className="rate-row" key={material}>
-                  <img src={category.image} alt="" aria-hidden="true" />
-                  <span>{material}</span>
-                  <strong>₹{rate}</strong>
+              {category.rates.map((material) => (
+                <div className="rate-row" key={material.name}>
+                  <img src={`/images/material-rates/items/${material.image}.jpg`} alt="" aria-hidden="true" />
+                  <span>{material.name}</span>
+                  <strong>₹{material.rate}</strong>
                   <small>/ kg</small>
                 </div>
               ))}
