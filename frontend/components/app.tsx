@@ -130,6 +130,16 @@ function frontendRole(profile: BackendProfile): UserRole | null {
   return null;
 }
 
+function nameFromEmail(email: string) {
+  const localPart = email.trim().split('@')[0] ?? '';
+  const name = localPart
+    .split(/[._+-]+/)
+    .filter(Boolean)
+    .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
+    .join(' ');
+  return name || 'Kabadiwala user';
+}
+
 function AuthPage({
   language,
   onLanguageChange,
@@ -142,7 +152,6 @@ function AuthPage({
   const router = useRouter();
   const t = (key: string) => translate(language, key);
   const [selected, setSelected] = useState<UserRole>('KABADIWALA');
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState<'sign-in' | 'register' | null>(null);
@@ -176,17 +185,13 @@ function AuthPage({
     }
   };
   const register = async () => {
-    if (!name.trim()) {
-      setError('Enter your name to create an account.');
-      return;
-    }
     setError(null);
     setBusy('register');
     try {
       await createUserWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
       const profile = await api.createProfile({
         role: selected === 'KABADIWALA' ? 'kabadiwala' : selected === 'MIDDLEMAN' ? 'middleman' : 'recycler',
-        name: name.trim(),
+        name: nameFromEmail(email),
       });
       finish(profile);
     } catch (reason) {
@@ -233,10 +238,7 @@ function AuthPage({
               </button>
             ))}
           </div>
-          <div className="form-grid">
-            <label>Full name<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
-            <label>Email<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" required /></label>
-          </div>
+          <label>Email<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" required /></label>
           <label>Password<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete="current-password" minLength={6} required /></label>
           <p className="form-hint">Aggregator and recycler accounts require administrator verification before they can trade.</p>
           {error && <div className="inline-error" role="alert">{error}</div>}
