@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -40,8 +39,7 @@ import { AppLanguage, translate } from '@/lib/i18n';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { TranslationProvider, useTranslation } from '@/lib/translation-context';
 import { api } from '@/services/api';
-import { getFirebaseAuth } from '@/lib/firebase';
-import type { BackendProfile, MaterialScanResult, ShopItem } from '@/services/api';
+import type { MaterialScanResult, ShopItem } from '@/services/api';
 import type { MaterialCategory, UserRole } from '@/types/domain';
 
 const Icon = ({ children }: { children: React.ReactNode }) => (
@@ -122,84 +120,29 @@ function Logo() {
     </div>
   );
 }
-function frontendRole(profile: BackendProfile): UserRole | null {
-  if (profile.role === 'kabadiwala') return 'KABADIWALA';
-  if (profile.role === 'middleman') return 'MIDDLEMAN';
-  if (profile.role === 'recycler') return 'RECYCLER';
-  if (profile.role === 'admin') return 'ADMIN';
-  return null;
-}
-
-function nameFromEmail(email: string) {
-  const localPart = email.trim().split('@')[0] ?? '';
-  const name = localPart
-    .split(/[._+-]+/)
-    .filter(Boolean)
-    .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
-    .join(' ');
-  return name || 'Kabadiwala user';
-}
-
 function AuthPage({
   language,
   onLanguageChange,
-  onAuthenticated,
+  onContinue,
 }: {
   language: AppLanguage;
   onLanguageChange: (language: AppLanguage) => void;
-  onAuthenticated: (profile: BackendProfile) => void;
+  onContinue: (role: UserRole, name: string) => void;
 }) {
   const router = useRouter();
   const t = (key: string) => translate(language, key);
   const [selected, setSelected] = useState<UserRole>('KABADIWALA');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState<'sign-in' | 'register' | null>(null);
+  const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const finish = (profile: BackendProfile) => {
-    const role = frontendRole(profile);
-    if (!role) {
-      setError('This is a staff account. Use the backend admin API for staff operations.');
+  const continueToApp = () => {
+    setError(null);
+    const displayName = name.trim();
+    if (!displayName) {
+      setError('Enter your name to continue.');
       return;
     }
-    onAuthenticated(profile);
-    router.push(roleHome[role]);
-  };
-  const messageFor = (reason: unknown) =>
-    reason instanceof Error ? reason.message : 'Unable to authenticate. Please try again.';
-  const signIn = async () => {
-    setError(null);
-    setBusy('sign-in');
-    try {
-      await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-      const { profile } = await api.verifyToken();
-      if (!profile) {
-        await signOut(getFirebaseAuth());
-        throw new Error('This Firebase account has no Kabadiwala Connect profile yet. Create an account first.');
-      }
-      finish(profile);
-    } catch (reason) {
-      setError(messageFor(reason));
-    } finally {
-      setBusy(null);
-    }
-  };
-  const register = async () => {
-    setError(null);
-    setBusy('register');
-    try {
-      await createUserWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-      const profile = await api.createProfile({
-        role: selected === 'KABADIWALA' ? 'kabadiwala' : selected === 'MIDDLEMAN' ? 'middleman' : 'recycler',
-        name: nameFromEmail(email),
-      });
-      finish(profile);
-    } catch (reason) {
-      await signOut(getFirebaseAuth()).catch(() => undefined);
-      setError(messageFor(reason));
-    } finally {
-      setBusy(null);
-    }
+    onContinue(selected, displayName);
+    router.push(roleHome[selected]);
   };
   return (
     <main className="auth-layout">
@@ -221,7 +164,7 @@ function AuthPage({
             <LanguageSwitcher language={language} onChange={onLanguageChange} compact />
           </div>
           <h1>{t('How will you use Kabadiwala Connect?')}</h1>
-          <p>{t('Sign in to an existing account, or choose a role before creating a new account.')}</p>
+          <p>{t('Choose a role and enter your name to continue.')}</p>
           <div className="role-options">
             {(['KABADIWALA', 'MIDDLEMAN', 'RECYCLER'] as UserRole[]).map((item) => (
               <button
@@ -238,13 +181,11 @@ function AuthPage({
               </button>
             ))}
           </div>
-          <label>Email<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" required /></label>
-          <label>Password<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete="current-password" minLength={6} required /></label>
-          <p className="form-hint">Aggregator and recycler accounts require administrator verification before they can trade.</p>
+          <label>Your name<input value={name} onChange={(event) => setName(event.target.value)} type="text" autoComplete="name" placeholder="Enter your name" required /></label>
+          <p className="form-hint">This demo lets you explore each role without an email address or password.</p>
           {error && <div className="inline-error" role="alert">{error}</div>}
           <div className="form-grid">
-            <Button onClick={signIn} disabled={busy !== null}>{busy === 'sign-in' ? 'Signing in...' : 'Sign in'}</Button>
-            <Button kind="secondary" onClick={register} disabled={busy !== null}>{busy === 'register' ? 'Creating...' : 'Create account'}</Button>
+            <Button onClick={continueToApp}>Continue</Button>
           </div>
         </div>
       </section>
@@ -948,9 +889,11 @@ function SimpleKabadiPage({
           ))}
           <button
             className="danger"
-            onClick={() =>
-              signOut(getFirebaseAuth()).finally(() => router.push('/auth/login'))
-            }
+            onClick={() => {
+              window.localStorage.removeItem('kabadiwala-demo-role');
+              window.localStorage.removeItem('kabadiwala-demo-name');
+              router.push('/auth/login');
+            }}
           >
             {t('Logout')}
             <LogOut />
@@ -1561,27 +1504,11 @@ export function App() {
     const savedLanguage = window.localStorage.getItem('kabadiwala-language') as AppLanguage | null;
     if (savedLanguage && ['en', 'hi', 'mr', 'ta', 'bn', 'te', 'kn'].includes(savedLanguage))
       setLanguage(savedLanguage);
-    let unsubscribe: (() => void) | undefined;
-    try {
-      unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (user) => {
-        if (!user) {
-          setRole(null);
-          setAuthReady(true);
-          return;
-        }
-        try {
-          const { profile } = await api.verifyToken();
-          setRole(profile ? frontendRole(profile) : null);
-        } catch {
-          setRole(null);
-        } finally {
-          setAuthReady(true);
-        }
-      });
-    } catch {
-      setAuthReady(true);
+    const savedRole = window.localStorage.getItem('kabadiwala-demo-role');
+    if (savedRole === 'KABADIWALA' || savedRole === 'MIDDLEMAN' || savedRole === 'RECYCLER') {
+      setRole(savedRole);
     }
-    return () => unsubscribe?.();
+    setAuthReady(true);
   }, []);
   useEffect(() => {
     document.documentElement.lang = language;
@@ -1591,15 +1518,19 @@ export function App() {
     setLanguage(next);
   };
   const logout = () => {
-    signOut(getFirebaseAuth()).finally(() => {
-      setRole(null);
-      router.push('/auth/login');
-    });
+    window.localStorage.removeItem('kabadiwala-demo-role');
+    window.localStorage.removeItem('kabadiwala-demo-name');
+    setRole(null);
+    router.push('/auth/login');
   };
   if (!authReady)
     return <main className="auth-layout"><section className="auth-panel"><div className="auth-card">Checking your session…</div></section></main>;
   if (!role || pathname.startsWith('/auth') || pathname === '/onboarding')
-    return <AuthPage language={language} onLanguageChange={changeLanguage} onAuthenticated={(profile) => setRole(frontendRole(profile))} />;
+    return <AuthPage language={language} onLanguageChange={changeLanguage} onContinue={(nextRole, name) => {
+      window.localStorage.setItem('kabadiwala-demo-role', nextRole);
+      window.localStorage.setItem('kabadiwala-demo-name', name);
+      setRole(nextRole);
+    }} />;
   const rootRole: UserRole | undefined = pathname.startsWith('/kabadiwala')
     ? 'KABADIWALA'
     : pathname.startsWith('/middleman')
